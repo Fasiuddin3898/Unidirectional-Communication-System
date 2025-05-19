@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Box, Typography, Container } from '@mui/material';
 import api from '../services/api';
+import { AppBar, Toolbar, IconButton } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 function RequestsPage() {
-  const { user } = useAuth();
+  const { user,logout } = useAuth();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +31,21 @@ function RequestsPage() {
   }
 
   return (
+    <>
+    <AppBar position="static">
+    <Toolbar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        My Requests
+        </Typography>
+        <IconButton 
+        color="inherit" 
+        onClick={() => logout()} 
+        aria-label="logout"
+        >
+        <LogoutIcon />
+        </IconButton>
+    </Toolbar>
+    </AppBar>
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
@@ -49,6 +66,7 @@ function RequestsPage() {
         )}
       </Box>
     </Container>
+    </>
   );
 }
 

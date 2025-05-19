@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Box, Button, Container, TextField, Typography, Link, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { AppBar, Toolbar, IconButton } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
+
 
 function RegisterPage() {
   const [name, setName] = useState('');
@@ -9,7 +12,7 @@ function RegisterPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('A');
   const [error, setError] = useState('');
-  const { register } = useAuth();
+  const { register,logout } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -22,6 +25,21 @@ function RegisterPage() {
   };
 
   return (
+    <>
+    <AppBar position="static">
+      <Toolbar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          My Requests
+        </Typography>
+        <IconButton 
+          color="inherit" 
+          onClick={() => logout()} 
+          aria-label="logout"
+        >
+          <LogoutIcon />
+        </IconButton>
+      </Toolbar>
+    </AppBar>
     <Container maxWidth="xs">
       <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Typography component="h1" variant="h5">
@@ -90,6 +108,7 @@ function RegisterPage() {
         </Box>
       </Box>
     </Container>
+    </>
   );
 }
 

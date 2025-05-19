@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { AppBar, Toolbar, IconButton } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { 
   Box, Typography, TextField, Button, Container, 
   List, ListItem, ListItemText, Divider, 
@@ -11,7 +13,7 @@ import api from '../services/api';
 
 function MessagesPage() {
   const { requestId } = useParams();
-  const { user } = useAuth();
+  const { user, logout  } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -27,6 +29,7 @@ function MessagesPage() {
     const fetchMessages = async () => {
       try {
         const { data } = await api.get(`/messages/${requestId}`);
+        console.log('Received messages data:', data);
         setMessages(data.data.messages);
         setRequestDetails(data.data.request);
         setIsRequester(data.data.isRequester);
@@ -46,6 +49,7 @@ function MessagesPage() {
           }, 1000);
         }
       } catch (err) {
+        console.error('Error fetching messages:', err);
         setError(err.response?.data?.message || 'Failed to load messages');
       } finally {
         setLoading(false);
@@ -106,6 +110,21 @@ function MessagesPage() {
   }
 
   return (
+    <>
+    <AppBar position="static">
+      <Toolbar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          UniCommunication System
+        </Typography>
+        <IconButton 
+          color="inherit" 
+          onClick={() => logout()} 
+          aria-label="logout"
+        >
+          <LogoutIcon />
+        </IconButton>
+      </Toolbar>
+    </AppBar>
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
         <Button onClick={() => navigate('/dashboard')} sx={{ mb: 2 }}>
@@ -146,73 +165,56 @@ function MessagesPage() {
           )}
         </Box>
         
-        // Update the message display part in MessagesPage.js
         <List sx={{ mb: 3, maxHeight: '60vh', overflow: 'auto' }}>
         {messages.length === 0 ? (
             <Typography variant="body1" sx={{ textAlign: 'center', my: 4 }}>
             {isRequester ? 'Send your first message' : 'No messages received yet'}
             </Typography>
         ) : (
-            messages.map((message) => {
-            // Only show requester messages if they haven't expired
-            const isExpired = message.isRequesterMessage && 
-                   message.expiresAt && 
-                   new Date(message.expiresAt) < new Date();
-            
-            // Don't show expired requester messages to responder
-            if (!isRequester && isExpired) return null;
-
-            return (
-                <Box key={message._id}>
+            messages.map((message) => (
+            <Box key={message._id}>
                 <ListItem alignItems="flex-start">
-                    <Box sx={{
+                <Box sx={{
                     display: 'flex',
-                    flexDirection: message.sender.role === user.role ? 'row-reverse' : 'row',
+                    flexDirection: message.sender._id === user._id ? 'row-reverse' : 'row',
                     width: '100%',
                     alignItems: 'flex-start'
-                    }}>
+                }}>
                     <Badge
-                        overlap="circular"
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                        badgeContent={message.sender.role === 'A' ? 'A' : 'B'}
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    badgeContent={message.sender.role === 'A' ? 'A' : 'B'}
                     >
-                        <Avatar sx={{ 
+                    <Avatar sx={{ 
                         bgcolor: message.sender.role === 'A' ? 'primary.main' : 'secondary.main',
-                        mr: message.sender.role !== user.role ? 2 : 0,
-                        ml: message.sender.role === user.role ? 2 : 0
-                        }}>
+                        mr: message.sender._id !== user._id ? 2 : 0,
+                        ml: message.sender._id === user._id ? 2 : 0
+                    }}>
                         {message.sender.name.charAt(0)}
-                        </Avatar>
+                    </Avatar>
                     </Badge>
                     <Box sx={{
-                        bgcolor: message.sender.role === user.role ? '#e3f2fd' : '#f5f5f5',
-                        borderRadius: 2,
-                        px: 2,
-                        py: 1,
-                        maxWidth: '70%',
-                        opacity: isExpired ? 0.6 : 1
+                    bgcolor: message.sender._id === user._id ? '#e3f2fd' : '#f5f5f5',
+                    borderRadius: 2,
+                    px: 2,
+                    py: 1,
+                    maxWidth: '70%'
                     }}>
-                        <Typography variant="subtitle2">
+                    <Typography variant="subtitle2">
                         {message.sender.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
                         {new Date(message.createdAt).toLocaleString()}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mt: 1 }}>
+                    </Typography>
+                    <Typography variant="body1" sx={{ mt: 1 }}>
                         {message.content}
-                        </Typography>
-                        {message.isRequesterMessage && message.expiresAt && (
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            {isExpired ? 'Expired' : `Expires: ${new Date(message.expiresAt).toLocaleString()}`}
-                        </Typography>
-                        )}
+                    </Typography>
                     </Box>
-                    </Box>
+                </Box>
                 </ListItem>
                 <Divider />
-                </Box>
-            );
-            })
+            </Box>
+            ))
         )}
         </List>
         
@@ -243,6 +245,7 @@ function MessagesPage() {
         )}
       </Box>
     </Container>
+    </>
   );
 }
 

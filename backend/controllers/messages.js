@@ -77,18 +77,22 @@ exports.createMessage = async (req, res, next) => {
 // Example controller code (backend)
 exports.getMessages = async (req, res, next) => {
   try {
+    console.log('Fetching messages for request:', req.params.requestId);
+    
     const request = await Request.findById(req.params.requestId)
       .populate('requester responder');
     
     if (!request) {
+      console.log('Request not found');
       return res.status(404).json({
         status: 'fail',
         message: 'Request not found'
       });
     }
 
-    // Check if user is part of this request
+    // Check permissions
     if (req.user.role === 'A' && !request.requester.equals(req.user._id)) {
+      console.log('Unauthorized access by requester');
       return res.status(403).json({
         status: 'fail',
         message: 'Not authorized'
@@ -96,29 +100,19 @@ exports.getMessages = async (req, res, next) => {
     }
 
     if (req.user.role === 'B' && !request.responder.equals(req.user._id)) {
+      console.log('Unauthorized access by responder');
       return res.status(403).json({
         status: 'fail',
         message: 'Not authorized'
       });
     }
 
-    // Get ALL messages for this request (frontend will handle filtering)
+    // Get ALL messages for this request
     const messages = await Message.find({ request: request._id })
       .populate('sender')
       .sort('createdAt');
 
-    // Calculate time left based on the latest requester message
-    let timeLeft = null;
-    if (req.user.role === 'B' && request.status === 'accepted') {
-      const latestRequesterMessage = await Message.findOne({
-        request: request._id,
-        isRequesterMessage: true
-      }).sort('-createdAt');
-
-      if (latestRequesterMessage && latestRequesterMessage.expiresAt) {
-        timeLeft = latestRequesterMessage.expiresAt - Date.now();
-      }
-    }
+    console.log('Found messages:', messages);
 
     res.status(200).json({
       status: 'success',
@@ -126,10 +120,11 @@ exports.getMessages = async (req, res, next) => {
         messages,
         request,
         isRequester: req.user.role === 'A',
-        timeLeft: timeLeft > 0 ? timeLeft : 0
+        timeLeft: 0 // Simplified for now
       }
     });
   } catch (err) {
+    console.error('Error in getMessages:', err);
     next(err);
   }
 };
