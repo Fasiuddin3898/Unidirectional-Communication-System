@@ -15,7 +15,7 @@ import backgroundImage from '../assets/background.jpg'; // Add your own image
 import requesterIcon from '../assets/requester.png'; // Add icons
 import responderIcon from '../assets/responder.png';
 
-// Animation variants
+// Animation variants added
 const cardVariants = {
   offscreen: {
     y: 50,
