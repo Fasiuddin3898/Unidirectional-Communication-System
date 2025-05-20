@@ -33,7 +33,7 @@ router.post('/', protect, async (req, res) => {
       receiver: request.responder._id,
       content: req.body.content,
       isRequesterMessage: true,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiration
+      expiresAt: new Date(Date.now() + 60 * 1000) // 1 minute expiration
     });
 
     res.status(201).json({ status: 'success', data: { message } });
