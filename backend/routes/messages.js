@@ -30,6 +30,7 @@ router.post('/', protect, async (req, res) => {
     const message = await Message.create({
       request: req.body.requestId,
       sender: req.user.id,
+      receiver: request.responder._id,
       content: req.body.content,
       isRequesterMessage: true,
       expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiration
@@ -135,6 +136,26 @@ router.get('/:requestId', protect, async (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ status: 'fail', message: err.message });
+  }
+});
+
+// Add this new route
+router.delete('/cleanup', async (req, res) => {
+  try {
+    // Cleanup expired messages
+    const result = await Message.deleteMany({
+      isRequesterMessage: true,
+      expiresAt: { $lt: new Date() }
+    });
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        deletedCount: result.deletedCount
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'fail', message: err.message });
   }
 });
 
