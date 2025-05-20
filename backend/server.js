@@ -33,16 +33,11 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Add this after your database connection
+/// After DB connection
 const initScheduler = require('./services/scheduler');
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('DB connection successful');
-    // Start the scheduler after DB connection
-    initScheduler();
-  })
-  .catch(err => console.error('DB connection error:', err));
+mongoose.connection.once('open', () => {
+  initScheduler();
+});
 
 // Basic route
 app.get('/', (req, res) => {

@@ -2,38 +2,32 @@ const cron = require('node-cron');
 const Message = require('../models/Message');
 const { sendReminderEmail } = require('../utils/emailService');
 
-// Initialize the scheduler
 const initScheduler = () => {
-  // Initialize email service first
-  require('../utils/emailService').initializeEmailService();
-
   // Run every 5 minutes
   cron.schedule('*/5 * * * *', async () => {
     try {
-      console.log('Running reminder check...');
-      
-      // Find all active requester messages that haven't expired
       const pendingMessages = await Message.find({
         isRequesterMessage: true,
-        expiresAt: { $gt: new Date() }
+        expiresAt: { $gt: new Date() }, // Not expired yet
+        lastReminderSent: { 
+          $lt: new Date(Date.now() - 5 * 60 * 1000) // Not reminded in last 5 mins
+        }
       })
-      .populate('sender', 'email name')
-      .populate('receiver', 'email name');
+      .populate('sender', 'name email')
+      .populate('receiver', 'email');
 
-      // Send reminders for each pending message
       for (const message of pendingMessages) {
-        // Only send reminder if less than 55 minutes have passed (to avoid last 5 min)
-        const timeElapsed = Date.now() - message.createdAt;
-        if (timeElapsed < 55 * 60 * 1000) {
-          await sendReminderEmail(message);
+        const success = await sendReminderEmail(message);
+        if (success) {
+          message.lastReminderSent = new Date();
+          message.reminderCount += 1;
+          await message.save();
         }
       }
     } catch (error) {
-      console.error('Error in reminder scheduler:', error);
+      console.error('Scheduler error:', error);
     }
   });
-
-  console.log('Scheduler initialized - running every 5 minutes');
 };
 
 module.exports = initScheduler;
